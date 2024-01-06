@@ -1,0 +1,23 @@
+{
+  "name": "backend-javascript",
+  "version": "1.0.0",
+  "description": "backend project using javascript",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "java",
+    "node",
+    "backend"
+  ],
+  "author": "kartikesh",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "prettier": "^3.1.1"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  }
+}
