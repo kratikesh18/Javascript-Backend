@@ -1,10 +1,22 @@
+import { app } from "./app.js";
 import connectToDB from "./db/index.js";
 import dotenv from 'dotenv'
+
+
 dotenv.config({
     path:"./.env"
 })
+const port = process.env.PORT || 8000 
+// async returns a promise so we can use then() and catch here
 connectToDB()
-
+.then(()=>{
+    app.listen(port, ()=>{
+        console.log(`server is running at : https://localhost:${port}`);
+    })
+})
+.catch((err) =>{
+    console.log("DB connection failed " ,err);
+})
 
 /*
 import dotenv from 'dotenv'
