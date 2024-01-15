@@ -3,4 +3,7 @@
     1. Mongoose
     2. Express
     3. Node
-    4. Appwrite
+    4. Postman
+    5. Javascript 
+    6. MongoDB
+    7. Cloudinary 
