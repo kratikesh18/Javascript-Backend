@@ -20,8 +20,11 @@ const updloadFileToCloud = async(localFilePath) => {
       return response 
       
     } catch (error) {
-      fs.unlinkSync(localFilePath)    //removes the locally saved temp file 
+      //fs.unlinkSync(localFilePath)    //removes the locally saved temp file 
       return null;
+    }
+    finally{
+        fs.unlinkSync(localFilePath);
     }
 }
 

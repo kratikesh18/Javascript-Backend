@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
 
 const userSchema = new Schema({
+    
     username:{
         type:String,
         required : true,
@@ -11,7 +12,6 @@ const userSchema = new Schema({
         trim:true,
         index:true    
     },
-    
     email:{
         type:String,
         required : true,
@@ -19,7 +19,7 @@ const userSchema = new Schema({
         lowercase:true,
         trim:true,   
     },
-    fullname:{
+    fullName:{
         type:String,
         required : true,
         trim:true,   
@@ -32,16 +32,19 @@ const userSchema = new Schema({
     coverImage:{
         type:String,        //cloudnary url
     },
+
     watchHistory:[
         {
             type:Schema.Types.ObjectId,
             ref:"video"
         }
     ],
+
     password:{      //challange
         type:String,
         required:[true,"Password is required"]
     },
+
     refreshToken:{
         type:String,
     }

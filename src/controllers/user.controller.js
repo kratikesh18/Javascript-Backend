@@ -6,10 +6,12 @@ import { ApiResponse } from '../utils/ApiResponse.js'
 
 
 
-const registerUser = asyncHandler( async(req, res, next )=>{
+const registerUser = asyncHandler( async(req, res)=>{
     // res.status("200").json({
     //     message:"Successful"
     // })
+
+
     // an  algorithm for writing the register the user
     /* 1.take input from frontend 
     2. validate if the data is entered correctly  ( ! empty)
@@ -22,15 +24,17 @@ const registerUser = asyncHandler( async(req, res, next )=>{
     9. return the respone whatever it is */
     
     // extraction of data from the reqeuest 
-    const {email, username, password, fullName} = req.body
 
-    console.log("email is : " , email);
+
+    const {email, username, password, fullName} = req.body
+    console.log("fullName is : " , email);
     console.log("username is : " , username);
+    console.log("email is : " , email);
     console.log("password is : " , password);
 
     // validating if the all inputs are not empty 
     if(
-        [fullName, username, email , password].some( (field)=> field.trim() === "" )    
+        [fullName, username, email , password].some( (field) => field?.trim() === "" )    
     ){
         throw new ApiError(401, "those fileds are can't be empty ")
     }   
@@ -40,19 +44,21 @@ const registerUser = asyncHandler( async(req, res, next )=>{
         $or :[{email} , {username}]
     })
 
-    if(userDoExist){
+    if(userDoExist){    
         throw new ApiError(409, "User with this username or email already exist!")
     }
 
     // checking for the avatar and coverimage 
-     console.log(req.files)
+    //  console.log(req.files)
 
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    
+//    console.log(req.files , avatarLocalPath)
+
     //same as for coverimage 
     let coverImageLocalPath;
+    
     if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
-        coverImageLocalPath = req.files.coverImage[0]?.path;
+        coverImageLocalPath = req.files.coverImage[0].path;
     }
 
 
@@ -72,10 +78,10 @@ const registerUser = asyncHandler( async(req, res, next )=>{
     // else all set and  craeate the user object 
     const user = await User.create({
         fullName, 
-        email, 
+        email,  
         password, 
-        avatar:avatar.url,
-        coverImage:coverImage?.url || "" ,      //push if the url is found or else push empty string 
+        avatar: avatar.url,
+        coverImage: coverImage?.url || "" ,      //push if the url is found or else push empty string 
         username: username.toLowerCase()
     })
 
@@ -88,10 +94,12 @@ const registerUser = asyncHandler( async(req, res, next )=>{
         throw new ApiError(500 , "An Error occured while registering the user")
     }
 
+    createdUser?console.log("user registeration successfull ! "):null;
     // now at the end  we are sending the final response 
     return res.status(200).json(
         // returning the api with the predeifined format of ApiResponse 
         new ApiResponse(200, createdUser, "User registered successfully !")
+
     )
 })
 

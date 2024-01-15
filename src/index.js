@@ -6,6 +6,7 @@ import dotenv from 'dotenv'
 dotenv.config({
     path:"./.env"
 })
+
 const port = process.env.PORT || 8000 
 // async returns a promise so we can use then() and catch here
 connectToDB()
