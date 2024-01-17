@@ -4,6 +4,25 @@ import {User} from "../models/user.model.js"
 import { updloadFileToCloud } from '../utils/Cloudinary.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
 
+const genrateAccessAndRefreshToken =async(userId)=>{
+    try {
+        const user = await User.findById(userId);
+        const refreshToken = user.genrateAccessToken()
+        const accessToken = user.genrateRefreshToken()
+
+        // the both accesstoken and refreshtokens are genrated but the refeshToken is required to store in the db 
+        user.refreshToken = refreshToken
+        // storing to the db 
+        await user.save({validateBeforeSave:false})
+
+        // now returning both tokens 
+        return {refreshToken, accessToken}
+
+    } catch (error) {
+        throw new ApiError(503, "Error Occured while genrating tokens")
+    }
+
+}
 
 
 const registerUser = asyncHandler( async(req, res)=>{
@@ -103,6 +122,76 @@ const registerUser = asyncHandler( async(req, res)=>{
     )
 })
 
+const loginUser = asyncHandler(async (req, res, next)=>{
+    /* steps to login the user
+    1.input from the req.body 
+    2.validate the inputs (!empty)
+    3.check the user exist 
+    4.validate the user 
+    5.find the user 
+    6.genrate accessToken and refreshToken 
+    7.send cookies */
+    
+
+    
+    
+
+    const {email , username , password} = req.body
+
+    if(!username || !email){
+        throw new ApiError(405, "Email or Username is required !");
+    }
+
+    // finding the user from the db 
+    const user = User.findOne({
+            $or: [{username} , {email}]
+    })
 
 
-export {registerUser}
+    if(!user){
+        throw new ApiError(401 , "Creadentials not found, User does not exist!")
+    }
+
+    //validating the password dbOperation  
+     const  isPasswordValid = await user.isPasswordCorrect(password)
+     
+     if(!isPasswordValid) {
+        throw new ApiError(405, "Enter the Valid Password")
+     }
+
+    // genrating the accessToken and refreshToken thats a time taking process await till token genrates  
+    const {accessToken , refreshToken} = await genrateAccessAndRefreshToken(user._id)
+
+    // now accessing the logged-in user 
+    const loggedUser = await User.findById(user._id).select("-password -refreshToken")
+
+
+    //cookie-options 
+    const options = {
+        httpOnly : true, 
+        secure:true
+    }
+
+    // sending the response 
+    return res
+    .status(200)
+    .cookie("accessToken",accessToken, options)
+    .cookie("refreshToken",refreshToken, options)
+    .json(
+        new ApiResponse(
+            200,
+             {
+                user: loggedUser, accessToken , refreshToken
+             }
+        ),
+        
+        "User logged in SuccessFully"
+    )
+
+})
+
+
+export {
+    registerUser,
+    loginUser
+}
