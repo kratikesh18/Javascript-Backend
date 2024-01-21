@@ -7,8 +7,8 @@ import { ApiResponse } from '../utils/ApiResponse.js'
 const genrateAccessAndRefreshToken =async(userId)=>{
     try {
         const user = await User.findById(userId);
-        const refreshToken = user.genrateAccessToken()
-        const accessToken = user.genrateRefreshToken()
+        const  accessToken  = user.genrateAccessToken()
+        const  refreshToken = user.genrateRefreshToken()
 
         // the both accesstoken and refreshtokens are genrated but the refeshToken is required to store in the db 
         user.refreshToken = refreshToken
@@ -44,7 +44,7 @@ const registerUser = asyncHandler( async(req, res)=>{
     
     // extraction of data from the reqeuest 
 
-
+    console.log("\n!------------ User Registration Started -----------!")
     const {email, username, password, fullName} = req.body
     console.log("fullName is : " , email);
     console.log("username is : " , username);
@@ -71,7 +71,7 @@ const registerUser = asyncHandler( async(req, res)=>{
     //  console.log(req.files)
 
     const avatarLocalPath = req.files?.avatar[0]?.path;
-//    console.log(req.files , avatarLocalPath)
+   console.log(req.files , avatarLocalPath)
 
     //same as for coverimage 
     let coverImageLocalPath;
@@ -87,6 +87,7 @@ const registerUser = asyncHandler( async(req, res)=>{
     
     // uploading to the cloudinary 
     const avatar = await updloadFileToCloud(avatarLocalPath)
+    
     const coverImage = await updloadFileToCloud(coverImageLocalPath)
 
     // if avatar is faild to updload 
@@ -113,7 +114,9 @@ const registerUser = asyncHandler( async(req, res)=>{
         throw new ApiError(500 , "An Error occured while registering the user")
     }
 
-    createdUser?console.log("user registeration successfull ! "):null;
+    createdUser?console.log("!------------ user registeration successfull -------------! \n"):null;
+
+
     // now at the end  we are sending the final response 
     return res.status(200).json(
         // returning the api with the predeifined format of ApiResponse 
@@ -134,16 +137,16 @@ const loginUser = asyncHandler(async (req, res, next)=>{
     
 
     
-    
-
+    console.log("\n!---------------Login Process is Started. ----------------!")
     const {email , username , password} = req.body
+    console.log("Credential  is " , email?email:username)
 
     if(!username && !email){
         throw new ApiError(405, "Email or Username is required !");
     }
 
-    // finding the user from the db 
-    const user = User.findOne({
+    // finding the user from the db make sure to await  
+    const user = await User.findOne({
             $or: [{username} , {email}]
     })
 
@@ -153,10 +156,10 @@ const loginUser = asyncHandler(async (req, res, next)=>{
     }
 
     //validating the password dbOperation  
-     const  isPasswordValid = await user.isPasswordCorrect(password)
+     const isPasswordValid = await user.isPasswordCorrect(password)
      
      if(!isPasswordValid) {
-        throw new ApiError(405, "Enter the Valid Password")
+        throw new ApiError(406, "Enter the Valid Password")
      }
 
     // genrating the accessToken and refreshToken thats a time taking process await till token genrates  
@@ -171,7 +174,8 @@ const loginUser = asyncHandler(async (req, res, next)=>{
         httpOnly : true, 
         secure:true
     }
-
+    
+    console.log("!--------------- Login Process is Ended. ----------------!\n")
     // sending the response 
     return res
     .status(200)
@@ -182,16 +186,15 @@ const loginUser = asyncHandler(async (req, res, next)=>{
             200,
              {
                 user: loggedUser, accessToken , refreshToken
-             }
-        ),
-        
-        "User logged in SuccessFully"
+             },
+             "User logged in SuccessFully"
+        ),        
     )
-
 })
 
 
 const logoutUser = asyncHandler(async(req, res)=>{
+    console.log("\n!--------- Logout Process Started --------------!")
     await User.findByIdAndUpdate(req.user._id,
         {
             $set:{
@@ -209,10 +212,11 @@ const logoutUser = asyncHandler(async(req, res)=>{
         secure:true
     }
 
+    console.log("!--------- Logout Process Ended  --------------!\n")
     // sending ApiResponse
     return res.status(200)
     .clearCookie("accessToken", options)
-    .clearCookie("refeshToken" , options)
+    .clearCookie("refreshToken" , options)
     .json(new ApiResponse(200, {}, "User Logged out successfully")) 
 })
 
