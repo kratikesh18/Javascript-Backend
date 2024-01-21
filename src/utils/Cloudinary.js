@@ -20,12 +20,15 @@ const updloadFileToCloud = async(localFilePath) => {
       return response 
       
     } catch (error) {
-      //fs.unlinkSync(localFilePath)    //removes the locally saved temp file 
+      fs.unlinkSync(localFilePath)    //removes the locally saved temp file 
+      console.log("returning null from here" , error?.message)
       return null;
     }
+   
     finally{
-        fs.unlinkSync(localFilePath);
+      fs.unlinkSync(localFilePath)
     }
+    
 }
 
 // exporting the uploadfile function 
