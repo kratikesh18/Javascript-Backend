@@ -56,38 +56,46 @@ const userSchema = new Schema({
 userSchema.pre('save', async function(next){
     if(!this.isModified("password"))return next() ;
 
-    this.password =  bcrypt.hash(this.password , 10)
+    this.password = await bcrypt.hash(this.password , 10)
     next();
 })
 
 // checking the password  is correct or not 
 userSchema.methods.isPasswordCorrect = async function(password){
+    console.log("recived key is : ",password)
+    console.log("correct key is : ",await this.password)
+
+    console.log("his password is ", await bcrypt.compare(password , this.password))
    return await bcrypt.compare(password, this.password)
 }
 
 // genrating the random access tokens 
 
 userSchema.methods.genrateAccessToken = function(){
-    return jwt.sign({
-        _id:this._id,
+
+    return jwt.sign(
+    {
+        _id: this._id,
         email: this.email,
-        username : this.username
+        username : this.username,
+        fullName : this.fullName
     },
     process.env.ACCESS_TOKEN_SECRET,
     {
-        expiresIn:process.env.ACCESS_TOKEN_EXPIRY
+       expiresIn: process.env.ACCESS_TOKEN_EXPIRY
     }
-
     )
 }
+
 userSchema.methods.genrateRefreshToken = function(){
-    return jwt.sign({
+    return jwt.sign(
+        {
         _id:this._id,
 
-    },
+        },
     process.env.REFRESH_TOKEN_SECRET,
     {
-        expiresIn:process.env.REFRESH_TOKEN_EXPIRY
+        expiresIn: process.env.REFRESH_TOKEN_EXPIRY
     }
 
     )
