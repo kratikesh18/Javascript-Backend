@@ -3,6 +3,8 @@ import  { ApiError } from '../utils/ApiError.js'
 import {User} from "../models/user.model.js"
 import { updloadFileToCloud } from '../utils/Cloudinary.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
+import jwt from "jsonwebtoken"
+
 
 const genrateAccessAndRefreshToken =async(userId)=>{
     try {
@@ -16,7 +18,7 @@ const genrateAccessAndRefreshToken =async(userId)=>{
         await user.save({validateBeforeSave:false})
 
         // now returning both tokens 
-        return {refreshToken, accessToken}
+        return {accessToken, refreshToken}  
 
     } catch (error) {
         throw new ApiError(503, "Error Occured while genrating tokens")
@@ -221,8 +223,67 @@ const logoutUser = asyncHandler(async(req, res)=>{
 })
 
 
+const regenrateToken = asyncHandler(async(req, res, next)=>{
+    /* we are genrating the access token using the refreshToken
+    1. retriving the token (refreshToken)
+    2. if token found go try catch  
+    3. decode the token by verifying it 
+    4. find the user by decoded info i.e  (_id) 
+    5. check if user found or not throw error
+    6. check if incomming token is matches to the stored refresh token of user Database 
+    7. if the refresh token is not matches throw error we didnt do process any further because refresh token is expired or invalid
+    8. else call the genrate tokens and send them as a response */
+
+    const incommingToken = req.cookies.refreshToken || req.body.refreshToken
+    console.log("\n!---------Started Regenrating tokens ----------!" )
+    if(!incommingToken){
+        throw new ApiError(402, " UnAuthorized : Refesh Token is not found ")
+    }
+
+    try {
+        // verifying the token 
+        const decodedInfo =  jwt.verify(incommingToken , process.env.REFRESH_TOKEN_SECRET)
+
+        // finding the user by using this decoded infos DBCALl! 
+        const user = await User.findById(decodedInfo?._id)
+         
+        if(!user){
+            throw new ApiError(401, "Invalid refresh Token ")
+        }
+
+
+        // if user is found now make a call to the db compare the incomming token to the db token 
+        if(incommingToken !== user?.refreshToken){
+            throw new ApiError(401, "Refresh token is used or invalid ")
+        }
+        
+        // returning the new accesstoken and refresh token as a response with the http options 
+        const options = {
+            httpOnly:true, 
+            secure: true
+        }
+        
+                // now generate the toke using function 
+        const {accessToken , refreshToken} = await genrateAccessAndRefreshToken(decodedInfo._id)
+
+        console.log("!-------- Access and refreshToken Genrated Successfully ----!\n")
+        return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+            new ApiResponse(200, 
+                {accessToken, refreshToken},
+            "Access token regenrated successfully! ")
+        )
+    } catch (error) {
+        throw new  ApiError(401, error?.message || "Invalid Request")
+    }
+})
+
 export {
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    regenrateToken
 }
