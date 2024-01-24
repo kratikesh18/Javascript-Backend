@@ -281,9 +281,151 @@ const regenrateToken = asyncHandler(async(req, res, next)=>{
     }
 })
 
+
+// writing more controllers for password updataion getting current user , update account details , uploading files 
+
+const changeUserPassword = asyncHandler(async(req, res)=>{
+    // extracting old and new password from request of user 
+    const {oldPassword, newPassword} = req.body
+
+    //the user is logged in so we can access the user directly by req.user
+    // by accessing the user we can get the ._id of the user and we can find the data entry
+
+    const user = await User.findById(req.user?._id)
+
+    // if(!user){
+    //     throw new ApiError(401, "User not found ")
+    // }
+
+    // checking if the old password is same as the currenct password 
+    const isOldPasswordCorrect = await User.isPasswordCorrect(oldPassword)
+
+    if(!isOldPasswordCorrect){
+        throw new ApiError(400, "Enter Correct Old Password ")
+    }
+
+    // if we reach down here , that means we got the correct old password 
+    user.password = newPassword
+    // saving tne new passowrd to the database 
+    await user.save({validateBeforeSave:false})
+    
+    // the password is successfully stored to the database now its time to return the response 
+   return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password is updated successfully "))
+})
+
+// gettin the currentUser 
+const getCurrentUser = asyncHandler(async(req, res)=>{
+    // if user is already logged in then we can get directly the user 
+    return res
+    .status(200)
+    .json(new ApiResponse(200, req.user, "CurrentUser Fetched Successfully!"))
+})
+
+
+const updateAccountDetails = asyncHandler(async(req, res)=>{
+    // here we are updating the fullName and email of the user 
+    const {fullName , email} = req.body
+
+    // check if the both things are not empty 
+    if(!fullName || !email){
+        throw new ApiError(405, "Mentioned fields are required!")
+    }
+
+    // finding the user and updating the data to the database 
+    const user = await User.findOneAndUpdate(
+        req.user._id, 
+        {
+            $set: (
+                fullName = fullName,
+                email = email
+            )
+        },
+        {new:true}
+    )   //now removing the password field from the user '   
+    .select("-password")
+
+    // we are ready to send the response containing the user 
+    res
+    .status(200)
+    .json(new ApiResponse(200, {user}, "Account Details Updation Successfull"))
+})
+
+//uploading the profile photous and cover photus 
+const updateAvatar = asyncHandler(async(req, res)=>{
+    // getting the localpath of the avatar 
+    const avatarLocalPath = req.file?.path
+
+    if(!avatarLocalPath){
+        throw new ApiError(409 , "Avatar file is not found")
+    }
+
+    // if we found the localpath we need to upload the file to the cloudinary 
+    const avatar = await updloadFileToCloud(avatarLocalPath)
+    
+    // if we didn't find the avatar url that means file is not uploaded to the cloud service
+    if(!avatar.url){
+        throw new ApiError(400, "Error is occured while uploading the file")
+    }
+    
+    // avatar contains the object given by the cloudinary 
+    // we need to save the avatar url to the database  findByIdAndUpdate 
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                avatar: avatar.url
+            }
+        },
+        {new:true}
+    ).select("-password")
+    
+    // ready to send the response 
+    return res
+    .status(200)
+    .json(new ApiResponse(200 , user, "Avatar is updated Successfully "))
+
+})
+
+const updateCoverImage = asyncHandler(async(req, res)=>{
+    const coverLocalPath = req.file?.path
+
+    if(!coverLocalPath){
+        throw new ApiError(400, "CoverImage not found")
+    }
+
+    // try to upload the localfilepath to the cloudinary 
+    const coverImage = await updloadFileToCloud(coverLocalPath)
+
+    if(!coverImage.url){
+        throw new ApiError(400, "Error occured while updating CoverImage ")
+    }
+
+    // if we found the coverImgae.url now time to save the url to the database 
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                coverImage : coverImage.url
+            }
+        },
+        {new:true}
+    ).select("-password")
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, user, "coverImage updated Successfully"))
+})
+
+
 export {
     registerUser,
     loginUser,
     logoutUser,
-    regenrateToken
+    regenrateToken,
+    changeUserPassword,
+    updateAvatar, 
+    updateCoverImage, 
+    updateAccountDetails
 }
