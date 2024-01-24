@@ -337,10 +337,12 @@ const updateAccountDetails = asyncHandler(async(req, res)=>{
     const user = await User.findOneAndUpdate(
         req.user._id, 
         {
-            $set: (
-                fullName = fullName,
-                email = email
-            )
+            $set: {
+
+                fullName : fullName,
+                email : email
+            }
+            
         },
         {new:true}
     )   //now removing the password field from the user '   
