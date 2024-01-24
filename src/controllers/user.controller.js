@@ -420,6 +420,87 @@ const updateCoverImage = asyncHandler(async(req, res)=>{
     .json(new ApiResponse(200, user, "coverImage updated Successfully"))
 })
 
+const getUserChannelInfo = asyncHandler(async(req, res)=>{
+    // fetching the username from the req.params 
+    const {username} = req.params
+
+    if(!username?.trim()){
+        throw new ApiError(400, "Username is not found")
+    }
+
+    // creating the pipeline to get the userchannel info from the database 
+    const channelInfo = await User.aggregate([
+        // first pipeline 
+        {
+            $match:{
+                username: username?.toLowerCase()
+            }
+        },
+        // second pipeline for getting the subscribers from subscriptions schema
+        {
+            $lookup:{
+                from:"subscriptions",
+                localField: "_.id",
+                foreignField:"channel",
+                as: "subscribers"
+            }
+        },
+        // third pipeline for getting the channels to subscribed from schema schema
+        {
+            $lookup:{
+                from:"subscriptions",
+                localField:"_.id",
+                foreignField:"subscribers",
+                as:"subscribedTo"
+            }
+        },
+        // 4th pipeline for adding more fields 
+        {
+            $addFields:{
+                // calculating the subscribers 
+                subscribersCount:{
+                    $size:"$subscribers"
+                },
+                channelsSubscribedCount : {
+                    $size:"$subscribedTo"
+                },
+                // this below section is for getting the is subscribed or not 
+                isSubscribed: {
+                    // checking the condition 
+                    $cond:{
+                        if:{$in:[req.user?._id ,"$subscribers.subscriber"]},
+                        then:true,
+                        else:false
+                    }
+                }
+            }
+        },
+        // the project pipline for selections of the data to be send 
+        {
+
+            $project:{
+                fullName:1, 
+                username:1, 
+                email:1,
+                subscribersCount:1,
+                channelsSubscribedCount:1,
+                avatar:1, 
+                coverImage:1, 
+                isSubscribed:1
+            }
+        }
+    ])
+
+    // if channel {info ) is not fond then we have to throw the error 
+    if(!channelInfo?.length){
+        throw new ApiError(404, "This Channel does not exist ")
+    } 
+
+    console.log(channelInfo)
+
+    // else we are ready to send the response 
+    return res.status(200).json(new ApiResponse(200, channelInfo[0] , "UserChannelInfo fetched successfully !"))
+})
 
 export {
     registerUser,
@@ -429,5 +510,6 @@ export {
     changeUserPassword,
     updateAvatar, 
     updateCoverImage, 
-    updateAccountDetails
+    updateAccountDetails,
+    getUserChannelInfo
 }
