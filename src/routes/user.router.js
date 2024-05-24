@@ -1,16 +1,16 @@
 import { Router } from "express";
 import {
-    changeUserPassword,
-    getCurrentUser,
-    getUserChannelInfo,
-    getUserWatchHistory,
-    loginUser,
-    logoutUser,
-    regenrateToken,
-    registerUser,
-    updateAccountDetails,
-    updateAvatar,
-    updateCoverImage,
+  changeUserPassword,
+  getCurrentUser,
+  getUserChannelInfo,
+  getUserWatchHistory,
+  loginUser,
+  logoutUser,
+  regenrateToken,
+  registerUser,
+  updateAccountDetails,
+  updateAvatar,
+  updateCoverImage,
 } from "../controllers/user.controller.js";
 
 import { upload } from "../middlewares/multer.middleware.js";
@@ -20,19 +20,7 @@ const router = Router();
 
 // creating the routers
 // on router we are uploading 2files using multer with registering the user
-router.route("/register").post(
-    upload.fields([
-        {
-            name: "avatar",
-            maxCount: 1,
-        },
-        {
-            name: "coverImage",
-            maxCount: 1,
-        },
-    ]),
-    registerUser
-);
+router.route("/register").post(registerUser);
 
 router.route("/login").post(loginUser);
 
@@ -45,11 +33,11 @@ router.route("/change-passoword").post(verifyJWT, changeUserPassword);
 // all patch requests
 router.route("/update-details").patch(verifyJWT, updateAccountDetails);
 router
-    .route("/update-avatar")
-    .patch(verifyJWT, upload.single("avatar"), updateAvatar);
+  .route("/update-avatar")
+  .patch(verifyJWT, upload.single("avatar"), updateAvatar);
 router
-    .route("/update-coverImage")
-    .patch(verifyJWT, upload.single("coverImage"), updateCoverImage);
+  .route("/update-coverImage")
+  .patch(verifyJWT, upload.single("coverImage"), updateCoverImage);
 
 // all get requests
 router.route("/get-user").get(verifyJWT, getCurrentUser);

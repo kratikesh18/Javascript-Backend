@@ -1,15 +1,15 @@
-// by promise 
+// by promise
 const asyncHandler = (requestHandler) => {
-    return (req, res, next) =>{
-        Promise.resolve(requestHandler(req, res, next)).catch((error) => next(error))
-    }
-}
+  return (req, res, next) => {
+    Promise.resolve(requestHandler(req, res, next)).catch((error) =>
+      next(error)
+    );
+  };
+};
 
+export { asyncHandler };
 
-export {asyncHandler}
-
-
-// by higher order function :refer to the notes  
+// by higher order function :refer to the notes
 // this is also an valid syntax
 // const asyncHandler = (fn) => async(req, res, next) =>{
 //     try {

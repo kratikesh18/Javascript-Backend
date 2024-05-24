@@ -54,6 +54,7 @@ const registerUser = asyncHandler(async (req, res) => {
     console.log("email is : ", email);
     console.log("password is : ", password);
 
+
     // validating if the all inputs are not empty 
     if (
         [fullName, username, email, password].some((field) => field?.trim() === "")
@@ -198,10 +199,11 @@ const loginUser = asyncHandler(async (req, res, next) => {
 
 const logoutUser = asyncHandler(async (req, res) => {
     console.log("\n!--------- Logout Process Started --------------!")
+    
     await User.findByIdAndUpdate(req.user._id,
         {
-            $set: {
-                refreshToken: undefined
+            $unset: {
+                refreshToken:1 //this removes the field from the document 
             }
         },
         {
@@ -336,7 +338,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 
     // finding the user and updating the data to the database 
     const user = await User.findOneAndUpdate(
-        req.user._id,
+        req.user._id,       
         {
             $set: {
 
